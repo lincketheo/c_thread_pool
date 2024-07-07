@@ -82,7 +82,6 @@ int zero_matrix(size_t rows, size_t cols, matrix* dest) {
 
 void print_matrix(matrix* m) {
   assert_matrix(m);
-  printf("Print\n");
   for(int i = 0; i < m->rows; ++i) {
     for(int j = 0; j < m->cols - 1; ++j) {
       printf("%f, ", m->data[i][j]);

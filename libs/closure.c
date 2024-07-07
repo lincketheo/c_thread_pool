@@ -63,7 +63,7 @@ FAILED:
   return NULL;
 }
 
-void timeit_closure_free(closure* c) {
+void free_timeit_closure(closure* c) {
   if(c) {
     if(c->data) {
       timeit_data* data = c->data;
@@ -119,5 +119,18 @@ FAILED:
   if(c)
     free(c);
   return NULL;
+}
+
+void free_example_closure(closure* c) {
+  if(c) {
+    if(c->data) {
+      example_closure_data* data = c->data;
+      if(data) {
+        free(data);
+        c->data = NULL;
+      }
+    }
+    free(c);
+  }
 }
 
