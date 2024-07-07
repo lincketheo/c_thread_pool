@@ -1,0 +1,68 @@
+[
+ {
+  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "arguments": [
+   "gcc",
+   "-o",
+   "libs/libmat.so",
+   "-shared",
+   "-fPIC",
+   "libs/matrix.c",
+   "-L./libs",
+   "-I./libs",
+   "-Wall",
+   "-Werror",
+   "-g"
+  ],
+  "file": "libs/matrix.c"
+ },
+ {
+  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "arguments": [
+   "gcc",
+   "-o",
+   "matrix_example",
+   "apps/matrix_example.c",
+   "-lmat",
+   "-L./libs",
+   "-I./libs",
+   "-Wall",
+   "-Werror",
+   "-g"
+  ],
+  "file": "apps/matrix_example.c"
+ },
+ {
+  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "arguments": [
+   "gcc",
+   "-o",
+   "libs/libclosure.so",
+   "-shared",
+   "-fPIC",
+   "libs/closure.c",
+   "-L./libs",
+   "-I./libs",
+   "-Wall",
+   "-Werror",
+   "-g"
+  ],
+  "file": "libs/closure.c"
+ },
+ {
+  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "arguments": [
+   "gcc",
+   "-o",
+   "closure_example",
+   "apps/closure_example.c",
+   "-lclosure",
+   "-L./libs",
+   "-I./libs",
+   "-Wall",
+   "-Werror",
+   "-g"
+  ],
+  "file": "apps/closure_example.c"
+ }
+]

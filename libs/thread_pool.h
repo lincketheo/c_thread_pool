@@ -1,11 +1,6 @@
 #pragma once
 
-typedef struct {
-  void (*func)(void*);
-  void *data;
-} closure;
-
-void closure_execute(closure* cl);
+#include "closure.h"
 
 typedef struct closure_node_s {
   closure *data;
@@ -17,6 +12,6 @@ typedef struct {
   closure_node *head;
 } work;
 
-int add(work* w, void(*func)(void*), void* data);
+int add_task(work* w, void(*func)(void*), void* data);
 
 closure *get_task(work* queue);

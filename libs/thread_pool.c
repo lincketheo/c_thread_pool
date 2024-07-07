@@ -29,11 +29,6 @@ FAILED:
   return NULL;
 }
 
-void closure_execute(closure* cl) {
-  assert(cl);
-  cl->func(cl->data);
-}
-
 int push(work* queue, void(*func)(void*), void* data) {
   assert(queue);
   assert(func);
