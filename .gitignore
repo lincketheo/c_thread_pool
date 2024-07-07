@@ -3,3 +3,5 @@
 **.o
 **.dSYM
 .cache
+matrix_example
+closure_example
