@@ -24,10 +24,6 @@ clock_t timeit_closure_execute(closure* c);
 void free_timeit_closure(closure* c);
 
 // An example closure that does a for loop for [iterations] iterations
-typedef struct {
-  uint64_t iterations;
-} example_closure_data;
-
 closure* example_closure_factory(uint64_t iterations);
 void free_example_closure(closure* c);
 

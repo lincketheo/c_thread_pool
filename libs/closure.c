@@ -91,19 +91,23 @@ void example_function_main(uint64_t input) {
   printf("Ending example closure\n");
 }
 
+// You don't __need__ to do this, but I think it makes the code
+// more readable, that is, the actual function (example_function_main) 
+// has no knowledge that it's in a closure
 void example_closure_wrapper(void* data) {
   assert(data);
-  example_closure_data* edata = data;
-  example_function_main(edata->iterations);
+  uint64_t* iterations = data;
+  assert(iterations);
+  example_function_main(*iterations);
 }
 
 closure* example_closure_factory(uint64_t iterations) {
-  example_closure_data* data = NULL;
+  uint64_t* data = NULL;
   closure* c = NULL;
 
   if((data = malloc(sizeof *data)) == NULL)
     goto FAILED;
-  data->iterations = iterations;
+  *data = iterations;
 
   if((c = malloc(sizeof *c)) == NULL)
     goto FAILED;
@@ -124,7 +128,7 @@ FAILED:
 void free_example_closure(closure* c) {
   if(c) {
     if(c->data) {
-      example_closure_data* data = c->data;
+      uint64_t* data = c->data;
       if(data) {
         free(data);
         c->data = NULL;
