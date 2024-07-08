@@ -1,4 +1,5 @@
 #include "thread_pool.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,8 +30,8 @@ FAILED:
   return NULL;
 }
 
-int push(work* queue, void(*func)(void*), void* data) {
-  assert(queue);
+int add_task(work* w, void(*func)(void*), void* data) {
+  assert(w);
   assert(func);
   closure_node* node = NULL;
 
@@ -38,22 +39,21 @@ int push(work* queue, void(*func)(void*), void* data) {
     return 1;
   }
 
-  node->next = queue->head;
-  queue->head = node;
+  node->next = w->head;
+  w->head = node;
 
   return 0;
 }
 
-closure *get_task(work* queue) {
-  assert(queue);
-  closure_node* c = queue->head;
+closure *get_task(work* w) {
+  assert(w);
+  closure_node* c = w->head;
   closure *ret = NULL;
   if(c != NULL) {
-    queue->head = c->next;
+    w->head = c->next;
     ret = c->data;
     free(c);
   }
   return ret;
 }
-
 

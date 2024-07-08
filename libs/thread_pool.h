@@ -14,4 +14,4 @@ typedef struct {
 
 int add_task(work* w, void(*func)(void*), void* data);
 
-closure *get_task(work* queue);
+closure *get_task(work* w);
