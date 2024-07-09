@@ -16,4 +16,4 @@ void print_matrix(matrix* m);
 
 void free_matrix(matrix* m);
 
-int matmul(matrix a, matrix b, matrix* dest);
+int matmul(const matrix* a, const matrix* b, matrix* dest);

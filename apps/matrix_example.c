@@ -1,4 +1,3 @@
-#include "thread_pool.h"
 #include "matrix.h"
 
 #include <stdio.h>
@@ -17,11 +16,11 @@ int main() {
     ret = 1;
     goto theend;
   }
-  if(zero_matrix(2, 4, & c)) {
+  if(zero_matrix(2, 4, &c)) {
     ret = 1;
     goto theend;
   }
-  if(matmul(a, b, &c)) {
+  if(matmul(&a, &b, &c)) {
     ret = 1;
     goto theend;
   }

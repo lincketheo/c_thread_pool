@@ -1,6 +1,6 @@
 [
  {
-  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "directory": "/home/tjl/Development/c_thread_pool",
   "arguments": [
    "gcc",
    "-o",
@@ -17,7 +17,7 @@
   "file": "libs/matrix.c"
  },
  {
-  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "directory": "/home/tjl/Development/c_thread_pool",
   "arguments": [
    "gcc",
    "-o",
@@ -33,7 +33,7 @@
   "file": "apps/matrix_example.c"
  },
  {
-  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "directory": "/home/tjl/Development/c_thread_pool",
   "arguments": [
    "gcc",
    "-o",
@@ -50,7 +50,7 @@
   "file": "libs/closure.c"
  },
  {
-  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "directory": "/home/tjl/Development/c_thread_pool",
   "arguments": [
    "gcc",
    "-o",

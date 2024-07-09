@@ -7,20 +7,20 @@
 
 #define assert_matrix(m) assert(m); assert(m->data); assert(m->rows > 0); assert(m->cols > 0);
 
-int matmul(matrix a, matrix b, matrix* dest) {
-  assert(a.data);
-  assert(b.data);
-  assert(a.cols == b.rows);
+int matmul(const matrix *a, const matrix *b, matrix* dest) {
+  assert(a->data);
+  assert(b->data);
+  assert(a->cols == b->rows);
   assert(dest);
   assert(dest->data);
-  assert(dest->rows = a.rows);
-  assert(dest->cols = b.cols);
+  assert(dest->rows == a->rows);
+  assert(dest->cols == b->cols);
 
-  for(int a_row = 0; a_row < a.rows; ++a_row) {
-    for(int b_col = 0; b_col < b.cols; ++b_col) {
+  for(int a_row = 0; a_row < a->rows; ++a_row) {
+    for(int b_col = 0; b_col < b->cols; ++b_col) {
       dest->data[a_row][b_col] = 0;
-      for(int b_row = 0; b_row < b.rows; ++b_row) {
-        dest->data[a_row][b_col] += a.data[a_row][b_row] * b.data[b_row][b_col];
+      for(int b_row = 0; b_row < b->rows; ++b_row) {
+        dest->data[a_row][b_col] += a->data[a_row][b_row] * b->data[b_row][b_col];
       }
     }
   }
