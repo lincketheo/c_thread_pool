@@ -2,16 +2,18 @@
 
 #include "closure.h"
 
-typedef struct closure_node_s {
-  closure *data;
-  struct closure_node_s* next;
-} closure_node;
-
 // An abstract struct meant to symbolize a "collection of work"
-typedef struct {
-  closure_node *head;
-} work;
+typedef struct work_s work;
+work* create_work() __attribute__((malloc));
+int free_work(work* w);
 
-int add_task(work* w, void(*func)(void*), void* data);
+// Adds a task to the work collection. 1 if failed 0 if successful
+// Thread safe
+int add_task(work* w, void (*func)(void*), void* context);
 
-closure *get_task(work* w);
+// Gets the next task. returns NULL if none are left
+// Thread safe
+closure* get_task(work* w);
+
+// Execute a set of work using [num_threads] threads. 1 if failed 0 if successful
+int thread_pool_execute(struct work_s* w, size_t num_threads);

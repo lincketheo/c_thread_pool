@@ -1,21 +1,20 @@
 #include "closure.h"
 #include "logging.h"
-#include "matrix.h"
 
 #include <assert.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 void closure_execute(closure* cl)
 {
   assert(cl);
   assert(cl->func);
-  cl->func(cl->data);
+  cl->func(cl->context);
 }
 
-clock_t timeit_execute(closure* cl, int verbose)
+// You don't __need__ to do this, but I think it makes the code
+// more readable, that is, the actual function
+// has no knowledge that it's in a closure
+static clock_t timeit_execute(closure* cl, int verbose)
 {
   assert(cl);
   assert(cl->func);
@@ -28,49 +27,67 @@ clock_t timeit_execute(closure* cl, int verbose)
   end = clock();
   if (verbose) {
     log_infoln("Ending timer at clock: %zu", end);
-    log_infoln("Duration: %zu clocks, %f seconds", end - start, (double)(end - start) / (double)CLOCKS_PER_SEC);
+    log_infoln("Duration: %zu clocks, %f seconds",
+        end - start,
+        (double)(end - start) / (double)CLOCKS_PER_SEC);
   }
   return end - start;
 }
 
-void timeit_wrapper(void* data)
+typedef struct {
+  closure* input;
+  int verbose;
+  clock_t output;
+} timeit_context;
+
+// Makes the responsibilities of this guy really small
+static void timeit_wrapper(void* context)
 {
-  assert(data);
-  timeit_data* tdata = data;
-  assert(tdata->input);
-  tdata->output = timeit_execute(tdata->input, tdata->verbose);
+  assert(context);
+  timeit_context* tcontext = context;
+  assert(tcontext->input);
+  tcontext->output = timeit_execute(tcontext->input, tcontext->verbose);
 }
 
-closure* timeit_closure_factory(closure* inner, int verbose)
+closure* timeit_closure_factory(void* func, void* context, int verbose)
 {
-  assert(inner);
-  assert(inner->func);
+  assert(func);
 
-  timeit_data* data = NULL;
-  closure* c = NULL;
+  timeit_context* tcontext = NULL;
+  closure* outer = NULL;
+  closure* inner = NULL;
 
-  if ((data = malloc(sizeof *data)) == NULL){
-    log_errorln_errno("malloc timeit closure data");
+  if ((tcontext = malloc(sizeof *context)) == NULL) {
+    log_errorln_errno("malloc timeit closure context");
     goto FAILED;
   }
-  data->input = inner;
-  data->verbose = verbose;
-
-  if ((c = malloc(sizeof *c)) == NULL){
-    log_errorln_errno("malloc timeit closure");
+  if ((inner = malloc(sizeof *inner)) == NULL) {
+    log_errorln_errno("malloc timeit inner closure");
+    goto FAILED;
+  }
+  if ((outer = malloc(sizeof *outer)) == NULL) {
+    log_errorln_errno("malloc timeit outer closure");
     goto FAILED;
   }
 
-  c->func = timeit_wrapper;
-  c->data = data;
+  inner->func = func;
+  inner->context = context;
 
-  return c;
+  tcontext->input = inner;
+  tcontext->verbose = verbose;
+
+  outer->func = timeit_wrapper;
+  outer->context = tcontext;
+
+  return outer;
 
 FAILED:
-  if (data)
-    free(data);
-  if (c)
-    free(c);
+  if (tcontext)
+    free(tcontext);
+  if (outer)
+    free(outer);
+  if (inner)
+    free(inner);
   log_errorln("Failed to create timeit closure");
   return NULL;
 }
@@ -79,11 +96,13 @@ void free_timeit_closure(closure* c)
 {
   if (c) {
     log_debugln("Free-ing timeit closure");
-    if (c->data) {
-      timeit_data* data = c->data;
-      if (data) {
-        free(data);
-        c->data = NULL;
+    if (c->context) {
+      timeit_context* context = c->context;
+      if (context) {
+        closure* inner = context->input;
+        free(inner);
+        free(context);
+        c->context = NULL;
       }
     }
     free(c);
@@ -92,139 +111,7 @@ void free_timeit_closure(closure* c)
 
 clock_t timeit_closure_execute(closure* c)
 {
-  assert(c);
   closure_execute(c);
-  timeit_data* d = c->data;
-  assert(d);
-  assert(d->input);
-  return d->output;
-}
-
-void example_function_main(uint64_t input)
-{
-  log_infoln("Starting example closure with %" PRIu64 " iterations", input);
-  for (volatile long i = 0; i < input; ++i)
-    ; // Simulate some work
-  log_infoln("Ending example closure");
-}
-
-// You don't __need__ to do this, but I think it makes the code
-// more readable, that is, the actual function (example_function_main)
-// has no knowledge that it's in a closure
-void example_closure_wrapper(void* data)
-{
-  assert(data);
-  uint64_t* iterations = data;
-  assert(iterations);
-  example_function_main(*iterations);
-}
-
-closure* example_closure_factory(uint64_t iterations)
-{
-  uint64_t* data = NULL;
-  closure* c = NULL;
-
-  if ((data = malloc(sizeof *data)) == NULL){
-    log_errorln_errno("malloc example closure data");
-    goto FAILED;
-  }
-  *data = iterations;
-
-  if ((c = malloc(sizeof *c)) == NULL){
-    log_errorln_errno("malloc example closure");
-    goto FAILED;
-  }
-
-  c->func = example_closure_wrapper;
-  c->data = data;
-
-  return c;
-
-FAILED:
-  if (data)
-    free(data);
-  if (c)
-    free(c);
-  log_errorln("Failed to create example closure");
-  return NULL;
-}
-
-void free_example_closure(closure* c)
-{
-  if (c) {
-    log_debugln("Free-ing example closure");
-    if (c->data) {
-      uint64_t* data = c->data;
-      if (data) {
-        free(data);
-        c->data = NULL;
-      }
-    }
-    free(c);
-  }
-}
-
-static void matrix_closure_wrapper(void* data)
-{
-  matmul_data* md = data;
-
-  const matrix* left = md->left;
-  const matrix* right = md->right;
-  matrix* dest = md->output;
-  assert(left);
-  assert(right);
-  assert(dest);
-
-  md->return_code = matmul(left, right, dest);
-}
-
-closure* matmul_closure_factory(
-    const matrix* left,
-    const matrix* right,
-    matrix* output)
-{
-  if (left == NULL || right == NULL || output == NULL) {
-    log_errorln("All matrices must be non null");
-    errno = EINVAL;
-    return NULL;
-  }
-
-  closure* c = NULL;
-  matmul_data* data = NULL;
-
-  if ((c = malloc(sizeof *c)) == NULL){
-    log_errorln_errno("malloc matmul closure data");
-    goto FAILED;
-  }
-  if ((data = malloc(sizeof *data)) == NULL){
-    log_errorln_errno("malloc matmul closure");
-    goto FAILED;
-  }
-
-  data->left = left;
-  data->right = right;
-  data->output = output;
-  data->return_code = 0;
-  c->func = matrix_closure_wrapper;
-  c->data = data;
-  return c;
-
-FAILED:
-  if (c)
-    free(c);
-  if (data)
-    free(data);
-  log_errorln("Failed to create matrix closure");
-  return NULL;
-}
-
-void free_matmul_closure(closure* c)
-{
-  if (c) {
-    log_debugln("Free-ing matmul closure");
-    if (c->data) {
-      free(c->data);
-    }
-    free(c);
-  }
+  timeit_context* tc = c->context;
+  return tc->output;
 }
