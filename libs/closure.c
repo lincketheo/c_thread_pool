@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <time.h>
 
 void closure_execute(closure* cl)
 {
@@ -11,33 +12,34 @@ void closure_execute(closure* cl)
   cl->func(cl->context);
 }
 
+#define loose_time(tsp) (tsp.tv_sec + tsp.tv_nsec / 1e9)
+#define t_diff(start, end) ((end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9)
+
 // You don't __need__ to do this, but I think it makes the code
 // more readable, that is, the actual function
 // has no knowledge that it's in a closure
-static clock_t timeit_execute(closure* cl, int verbose)
+static double timeit_execute(closure* cl, int verbose)
 {
   assert(cl);
   assert(cl->func);
-  clock_t start, end;
-  start = clock();
+  struct timespec start, end;
+  clock_gettime(CLOCK_MONOTONIC, &start);
   if (verbose) {
-    log_infoln("Starting timer at clock: %zu", start);
+    log_infoln("Starting timer at clock: %f", loose_time(start));
   }
   closure_execute(cl);
-  end = clock();
+  clock_gettime(CLOCK_MONOTONIC, &end);
   if (verbose) {
-    log_infoln("Ending timer at clock: %zu", end);
-    log_infoln("Duration: %zu clocks, %f seconds",
-        end - start,
-        (double)(end - start) / (double)CLOCKS_PER_SEC);
+    log_infoln("Ending timer at clock: %f", loose_time(end));
+    log_infoln("Duration: %f seconds", t_diff(start, end));
   }
-  return end - start;
+  return t_diff(start, end);
 }
 
 typedef struct {
   closure* input;
   int verbose;
-  clock_t output;
+  double output;
 } timeit_context;
 
 // Makes the responsibilities of this guy really small
@@ -57,7 +59,7 @@ closure* timeit_closure_factory(void* func, void* context, int verbose)
   closure* outer = NULL;
   closure* inner = NULL;
 
-  if ((tcontext = malloc(sizeof *context)) == NULL) {
+  if ((tcontext = malloc(sizeof *tcontext)) == NULL) {
     log_errorln_errno("malloc timeit closure context");
     goto FAILED;
   }
@@ -95,23 +97,23 @@ FAILED:
 void free_timeit_closure(closure* c)
 {
   if (c) {
-    log_debugln("Free-ing timeit closure");
     if (c->context) {
       timeit_context* context = c->context;
       if (context) {
         closure* inner = context->input;
-        free(inner);
+        if(inner)
+          free(inner);
         free(context);
-        c->context = NULL;
       }
     }
     free(c);
   }
 }
 
-clock_t timeit_closure_execute(closure* c)
+double timeit_closure_execute(closure* c)
 {
   closure_execute(c);
   timeit_context* tc = c->context;
   return tc->output;
 }
+

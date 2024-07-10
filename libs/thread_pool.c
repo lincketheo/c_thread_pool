@@ -44,10 +44,9 @@ int free_work(work* w)
   int ret = 0;
   if (w) {
     if (w->head) {
-      closure* c = get_task(w);
-      while (c != NULL) {
+      closure* c;
+      while ((c = get_task(w)) != NULL)
         free(c);
-      }
     }
     ret += abs(pthread_mutex_destroy(&w->mutex));
     free(w);
@@ -63,11 +62,11 @@ static closure_node* closure_node_factory(void (*func)(void*), void* context)
   closure* c = NULL;
 
   if ((ret = malloc(sizeof *ret)) == NULL) {
-    perror("closure_node malloc");
+    log_errorln_errno("closure_node malloc");
     goto FAILED;
   }
   if ((c = malloc(sizeof *c)) == NULL) {
-    perror("closure malloc");
+    log_errorln_errno("closure malloc");
     goto FAILED;
   }
 
@@ -131,6 +130,7 @@ static void* worker_thread(void* cl)
   closure* task = NULL;
   while ((task = get_task(w)) != NULL) {
     closure_execute(task);
+    free(task);
   }
   return NULL;
 }
@@ -140,7 +140,7 @@ int thread_pool_execute(work* w, size_t num_threads)
   int ret = 0;
   pthread_t* threads = NULL;
 
-  if ((threads = calloc(num_threads, sizeof *threads)) == NULL) {
+  if ((threads = calloc(num_threads, sizeof(pthread_t))) == NULL) {
     log_errorln_errno("allocating memory for threads");
     ret = 1;
     goto theend;

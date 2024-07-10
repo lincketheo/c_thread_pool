@@ -21,4 +21,4 @@ closure* timeit_closure_factory(
 void free_timeit_closure(closure* c);
 
 // Hides the details of casting timer data details
-clock_t timeit_closure_execute(closure* c);
+double timeit_closure_execute(closure* c);

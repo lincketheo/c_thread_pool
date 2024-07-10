@@ -1,6 +1,6 @@
 [
  {
-  "directory": "/home/tjl/Development/c_thread_pool",
+  "directory": "/Users/theolincke/Development/c_thread_pool",
   "arguments": [
    "gcc",
    "-o",
@@ -17,7 +17,7 @@
   "file": "libs/matrix.c"
  },
  {
-  "directory": "/home/tjl/Development/c_thread_pool",
+  "directory": "/Users/theolincke/Development/c_thread_pool",
   "arguments": [
    "gcc",
    "-o",
@@ -33,7 +33,7 @@
   "file": "apps/matrix_example.c"
  },
  {
-  "directory": "/home/tjl/Development/c_thread_pool",
+  "directory": "/Users/theolincke/Development/c_thread_pool",
   "arguments": [
    "gcc",
    "-o",
@@ -50,12 +50,31 @@
   "file": "libs/closure.c"
  },
  {
-  "directory": "/home/tjl/Development/c_thread_pool",
+  "directory": "/Users/theolincke/Development/c_thread_pool",
   "arguments": [
    "gcc",
    "-o",
-   "closure_example",
-   "apps/closure_example.c",
+   "libs/libthreadpool.so",
+   "-shared",
+   "-fPIC",
+   "-lclosure",
+   "libs/thread_pool.c",
+   "-L./libs",
+   "-I./libs",
+   "-Wall",
+   "-Werror",
+   "-g"
+  ],
+  "file": "libs/thread_pool.c"
+ },
+ {
+  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "arguments": [
+   "gcc",
+   "-o",
+   "test_thread_pool",
+   "apps/test_thread_pool.c",
+   "-lthreadpool",
    "-lclosure",
    "-L./libs",
    "-I./libs",
@@ -63,6 +82,6 @@
    "-Werror",
    "-g"
   ],
-  "file": "apps/closure_example.c"
+  "file": "apps/test_thread_pool.c"
  }
 ]

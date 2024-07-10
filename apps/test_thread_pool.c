@@ -1,10 +1,10 @@
 
-#include "CUnit/CUnit.h"
 #include "closure.h"
 #include "logging.h"
 #include "thread_pool.h"
 #include <stdlib.h>
 #include <unistd.h>
+#include <assert.h>
 
 void busy_wait()
 {
@@ -56,34 +56,20 @@ typedef union {
   divide d;
 } task;
 
-#define CU_ASSERT_ADD_CLOSURE_END_STATE_CORRECT(t) \
-  do {                                             \
-  } while (0);
-
-#define CU_ASSERT_MULT_CLOSURE_END_STATE_CORRECT(t) \
-  CU_ASSERT(t.a* t.b == t.ret);
-
-#define CU_ASSERT_DIV_CLOSURE_END_STATE_CORRECT(t) \
-  do {                                             \
-    add* _a = t.context;                           \
-    CU_ASSERT_PTR_NOT_NULL_FATAL(_a);              \
-    CU_ASSERT(_a->a / _a->b == _a->ret);           \
-  } while (0);
-
 void create_work_for_test(
-    size_t num_tasks,
-    int max_arg,
-    task** args_dest,
-    int** types_dest,
-    work** work_dest)
+  size_t num_tasks,
+  int max_arg,
+  task** args_dest,
+  int** types_dest,
+  work** work_dest)
 {
   work* w = create_work();
   task* t = malloc(num_tasks * sizeof *t);
   int* types = malloc(num_tasks * sizeof *types);
 
-  CU_ASSERT_PTR_NOT_NULL_FATAL(w);
-  CU_ASSERT_PTR_NOT_NULL_FATAL(t);
-  CU_ASSERT_PTR_NOT_NULL_FATAL(types);
+  assert(w);
+  assert(t);
+  assert(types);
 
   for (int i = 0; i < num_tasks; ++i) {
     int arg1 = rand() % max_arg;
@@ -91,23 +77,23 @@ void create_work_for_test(
     types[i] = (int)(rand() % 3);
 
     switch (types[i]) {
-    case 0:
-      t[i].a.a = arg1;
-      t[i].a.b = arg2;
-      CU_ASSERT_FATAL(add_task(w, _add_task, &t[i].a) == 0);
-      break;
-    case 1:
-      t[i].m.a = arg1;
-      t[i].m.b = arg2;
-      CU_ASSERT_FATAL(add_task(w, multiply_task, &t[i].m) == 0);
-      break;
-    case 2:
-      t[i].d.a = (float)arg1;
-      t[i].d.b = (float)arg2;
-      CU_ASSERT_FATAL(add_task(w, divide_task, &t[i].d) == 0);
-      break;
-    default:
-      CU_FAIL("rand() % 3 was greater than 2?");
+      case 0:
+        t[i].a.a = arg1;
+        t[i].a.b = arg2;
+        assert(add_task(w, _add_task, &t[i].a) == 0);
+        break;
+      case 1:
+        t[i].m.a = arg1;
+        t[i].m.b = arg2;
+        assert(add_task(w, multiply_task, &t[i].m) == 0);
+        break;
+      case 2:
+        t[i].d.a = (float)arg1;
+        t[i].d.b = (float)arg2;
+        assert(add_task(w, divide_task, &t[i].d) == 0);
+        break;
+      default:
+        assert(0);
     }
   }
 
@@ -117,24 +103,24 @@ void create_work_for_test(
 }
 
 void test_verify_tasks_correct(
-    size_t num_tasks,
-    task* args,
-    int* types)
+  size_t num_tasks,
+  task* args,
+  int* types)
 {
   for (int i = 0; i < num_tasks; ++i) {
     switch (types[i]) {
-    case 0:
-      CU_ASSERT(args[i].a.a + args[i].a.b == args[i].a.ret);
-      break;
-    case 1:
-      CU_ASSERT(args[i].m.a * args[i].m.b == args[i].m.ret);
-      break;
-    case 2:
-      CU_ASSERT(args[i].d.a / args[i].d.b == args[i].d.ret);
-      break;
-    default:
-      CU_FAIL("rand() % 3 was greater than 2?");
-      return;
+      case 0:
+        assert(args[i].a.a + args[i].a.b == args[i].a.ret);
+        break;
+      case 1:
+        assert(args[i].m.a * args[i].m.b == args[i].m.ret);
+        break;
+      case 2:
+        assert(args[i].d.a / args[i].d.b == args[i].d.ret);
+        break;
+      default:
+        assert(0 && "rand() % 3 was greater than 2?");
+        return;
     }
   }
 }
@@ -160,7 +146,7 @@ void timing_test(size_t num_threads)
   task* tasks_fast;
   int* types_fast;
 
-  size_t num_tasks = 100000;
+  size_t num_tasks = 1000;
   create_work_for_test(num_tasks, 1000, &tasks_slow, &types_slow, &w_slow);
   create_work_for_test(num_tasks, 1000, &tasks_fast, &types_fast, &w_fast);
 
@@ -176,11 +162,13 @@ void timing_test(size_t num_threads)
   closure* t_slow = timeit_closure_factory(execute_wrapper, &c_slow, 0);
   closure* t_fast = timeit_closure_factory(execute_wrapper, &c_fast, 0);
 
-  clock_t slow_results = timeit_closure_execute(t_slow);
-  clock_t fast_results = timeit_closure_execute(t_fast);
-  printf("%zu %zu\n", slow_results, fast_results);
-  exit(1);
-  CU_ASSERT(fast_results < slow_results);
+  double slow_results = timeit_closure_execute(t_slow);
+  double fast_results = timeit_closure_execute(t_fast);
+
+  log_infoln("%zu threads: %f Seconds", 1Lu, slow_results);
+  log_infoln("%zu threads: %f Seconds", num_threads, fast_results);
+
+  assert(num_threads * 0.75 * fast_results <= slow_results);
 
   free_timeit_closure(t_slow);
   free_timeit_closure(t_fast);
@@ -189,8 +177,8 @@ void timing_test(size_t num_threads)
   free(tasks_fast);
   free(types_fast);
 
-  CU_ASSERT(free_work(w_slow) == 0);
-  CU_ASSERT(free_work(w_fast) == 0);
+  assert(free_work(w_slow) == 0);
+  assert(free_work(w_fast) == 0);
 }
 
 void validation_test(size_t num_threads)
@@ -209,13 +197,17 @@ void validation_test(size_t num_threads)
   free_work(w);
 }
 
-void test_thread_pool()
+int main()
 {
   long num_processors = sysconf(_SC_NPROCESSORS_ONLN);
+
   if (num_processors == -1) {
     log_infoln("Skipping thread test. Couldn't figure out how many threads exist");
-    return;
+    return 0;
   }
+
+  log_infoln("Num Processors: %ld", num_processors);
+
   if (num_processors > 2) {
     timing_test(num_processors);
   } else {
@@ -224,5 +216,7 @@ void test_thread_pool()
 
   validation_test(num_processors);
 
-  return;
+  return 0;
 }
+
+
