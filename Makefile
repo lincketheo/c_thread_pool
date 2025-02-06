@@ -1,33 +1,40 @@
+# Directories
+BIN_SRC := ./apps
+LIB_SRC := ./libs
+TEST_SRC := ./tests
 
+# Compiler & Flags
+CC := gcc
+CFLAGS := -Wall -Werror -g -fPIC -I$(LIB_SRC) -L.
+LDFLAGS := -shared
+TEST_LIBS := -lcunit
 
-BIN_DIR=.
-BIN_SRC_DIR=./apps
-LIB_DIR=./libs
-C_FLAGS=-L$(LIB_DIR) -I$(LIB_DIR) -Wall -Werror -g
+# Targets
+LIBRARY := libthreadpool.so
+BINARIES := $(patsubst $(BIN_SRC)/%.c, %, $(wildcard $(BIN_SRC)/*.c))
+TESTS := $(patsubst $(TEST_SRC)/%.c, %, $(wildcard $(TEST_SRC)/*.c))
 
-all: $(BIN_DIR)/matrix_example $(BIN_DIR)/test_thread_pool
+.PHONY: all clean format
 
-$(BIN_DIR)/test_thread_pool: $(BIN_SRC_DIR)/test_thread_pool.c $(LIB_DIR)/libthreadpool.so $(LIB_DIR)/libclosure.so
-	gcc -o $@ $< -lthreadpool -lclosure $(C_FLAGS)
+all: $(LIBRARY) $(BINARIES) $(TESTS)
 
-$(BIN_DIR)/matrix_example: $(BIN_SRC_DIR)/matrix_example.c $(LIB_DIR)/libmat.so 
-	gcc -o $@ $< -lmat $(C_FLAGS)
+# Compile all .c files in libs into a single shared library
+$(LIBRARY): $(wildcard $(LIB_SRC)/*.c)
+	$(CC) -o $@ $(LDFLAGS) $^ $(CFLAGS)
 
-$(LIB_DIR)/libthreadpool.so: $(LIB_DIR)/thread_pool.c $(LIB_DIR)/libclosure.so
-	gcc -o $@ -shared -fPIC -lclosure $< $(C_FLAGS)
+# Build each app executable and link with the shared library
+%: $(BIN_SRC)/%.c $(LIBRARY)
+	$(CC) -o $@ $< $(CFLAGS) -lthreadpool
 
-$(LIB_DIR)/libmat.so: $(LIB_DIR)/matrix.c
-	gcc -o $@ -shared -fPIC $< $(C_FLAGS)
+# Build each test in ./tests as an executable
+%: $(TEST_SRC)/%.c $(LIBRARY)
+	$(CC) -o $@ $< $(CFLAGS) $(TEST_LIBS) -lthreadpool
 
-$(LIB_DIR)/libclosure.so: $(LIB_DIR)/closure.c
-	gcc -o $@ -shared -fPIC $< $(C_FLAGS)
+# Format all .c and .h files recursively
+format:
+	find $(BIN_SRC) $(LIB_SRC) $(TEST_SRC) -name "*.c" -o -name "*.h" | xargs clang-format -i
 
+# Clean
 clean:
-	rm -rf $(LIB_DIR)/*.so
-	rm -rf $(LIB_DIR)/*.a
-	rm -rf $(LIB_DIR)/*.o
-	rm -f matrix_example
-	rm -f closure_example 
-	rm -rf $(LIB_DIR)/*.dSYM
-	rm -rf *.dSYM
+	rm -f $(BINARIES) $(TESTS) $(LIBRARY) *.o *.dSYM
 

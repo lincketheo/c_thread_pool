@@ -1,88 +1,98 @@
 #include "async_await.h"
 #include "closure.h"
 #include "logging.h"
-#include "thread_pool.h"
+#include "threadpool.h"
 #include <pthread.h>
 
-struct async_task_s {
+struct async_task_s
+{
   pthread_cond_t cond;
   pthread_mutex_t mutex;
   int complete;
-  closure* task;
+  closure *task;
 };
 
-static void execute_async_task(void* arg)
+static void
+execute_async_task (void *arg)
 {
-  async_task* task = arg;
-  closure_execute(task->task);
+  async_task *task = arg;
+  closure_execute (task->task);
 
-  pthread_mutex_lock(&task->mutex);
+  pthread_mutex_lock (&task->mutex);
   task->complete = 1;
-  pthread_cond_signal(&task->cond);
-  pthread_mutex_unlock(&task->mutex);
+  pthread_cond_signal (&task->cond);
+  pthread_mutex_unlock (&task->mutex);
 }
 
-async_task* async(thread_pool* pool, void (*func)(void*), void* context)
+async_task *
+async (thread_pool *pool, void (*func) (void *), void *context)
 {
-  if (thread_pool_not_spinning(pool)) {
-    log_errorln("Cannot create async task on non spinning thread pool");
-    return NULL;
-  }
+  if (thread_pool_not_spinning (pool))
+    {
+      log_errorln ("Cannot create async task on non spinning thread pool");
+      return NULL;
+    }
 
-  closure* inner = NULL;
-  async_task* t = NULL;
+  closure *inner = NULL;
+  async_task *t = NULL;
 
-  if ((inner = malloc(sizeof *inner)) == NULL) {
-    log_errorln_errno("Failed to create inner closure");
-    goto failed;
-  }
-  if ((t = malloc(sizeof *t)) == NULL) {
-    log_errorln_errno("Failed to create async task");
-    goto failed;
-  }
+  if ((inner = malloc (sizeof *inner)) == NULL)
+    {
+      log_errorln_errno ("Failed to create inner closure");
+      goto failed;
+    }
+  if ((t = malloc (sizeof *t)) == NULL)
+    {
+      log_errorln_errno ("Failed to create async task");
+      goto failed;
+    }
 
   inner->func = func;
   inner->context = context;
 
   t->task = inner;
-  pthread_mutex_init(&t->mutex, NULL);
-  pthread_cond_init(&t->cond, NULL);
+  pthread_mutex_init (&t->mutex, NULL);
+  pthread_cond_init (&t->cond, NULL);
   t->complete = 0;
 
-  if (add_task(pool, execute_async_task, t)) {
-    log_errorln("Failed to add task");
-    pthread_mutex_destroy(&t->mutex);
-    pthread_cond_destroy(&t->cond);
-    goto failed;
-  }
+  if (add_task (pool, execute_async_task, t))
+    {
+      log_errorln ("Failed to add task");
+      pthread_mutex_destroy (&t->mutex);
+      pthread_cond_destroy (&t->cond);
+      goto failed;
+    }
 
   return t;
 
 failed:
   if (inner)
-    free(inner);
-  if (t) {
-    free(t);
-  }
+    free (inner);
+  if (t)
+    {
+      free (t);
+    }
   return NULL;
 }
 
-int await(async_task* t)
+int
+await (async_task *t)
 {
-  if (t == NULL) {
-    log_errorln("Invalid argument");
-    return 1;
-  }
+  if (t == NULL)
+    {
+      log_errorln ("Invalid argument");
+      return 1;
+    }
   int ret = 0;
 
-  ret += abs(pthread_mutex_lock(&t->mutex));
+  ret += abs (pthread_mutex_lock (&t->mutex));
   while (!t->complete)
-    ret += abs(pthread_cond_wait(&t->cond, &t->mutex));
-  ret += abs(pthread_mutex_unlock(&t->mutex));
-  ret += abs(pthread_mutex_destroy(&t->mutex));
-  ret += abs(pthread_cond_destroy(&t->cond));
-  free(t->task);
-  free(t);
+    ret += abs (pthread_cond_wait (&t->cond, &t->mutex));
+  ret += abs (pthread_mutex_unlock (&t->mutex));
+  ret += abs (pthread_mutex_destroy (&t->mutex));
+  ret += abs (pthread_cond_destroy (&t->cond));
+  free (t->task);
+  free (t);
 
   return ret;
 }
