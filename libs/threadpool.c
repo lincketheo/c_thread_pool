@@ -41,36 +41,36 @@ thread_pool_not_spinning (thread_pool *w)
   return (w->num_threads == 0) && (w->threads == NULL);
 }
 
-#define pthread_mutex_lock_ret(w)                                             \
-  if (pthread_mutex_lock (w))                                                 \
-    {                                                                         \
-      log_errorln ("Failed to lock mutex");                                   \
-      return 1;                                                               \
+#define pthread_mutex_lock_ret(w)           \
+  if (pthread_mutex_lock (w))               \
+    {                                       \
+      i_log_error ("Failed to lock mutex"); \
+      return 1;                             \
     }
 
-#define pthread_mutex_unlock_ret(w)                                           \
-  if (pthread_mutex_unlock (w))                                               \
-    {                                                                         \
-      log_errorln ("Failed to unlock mutex");                                 \
-      return 1;                                                               \
+#define pthread_mutex_unlock_ret(w)           \
+  if (pthread_mutex_unlock (w))               \
+    {                                         \
+      i_log_error ("Failed to unlock mutex"); \
+      return 1;                               \
     }
 
 static closure_node *
 closure_node_factory (void (*func) (void *), void *context)
 {
-  assert (func);
+  ASSERT (func);
 
   closure_node *ret = NULL;
   closure *c = NULL;
 
   if ((ret = malloc (sizeof *ret)) == NULL)
     {
-      log_errorln_errno ("closure_node malloc");
+      i_log_error ("closure_node malloc");
       goto FAILED;
     }
   if ((c = malloc (sizeof *c)) == NULL)
     {
-      log_errorln_errno ("closure malloc");
+      i_log_error ("closure malloc");
       goto FAILED;
     }
 
@@ -126,7 +126,7 @@ add_task (thread_pool *w, void (*func) (void *), void *cl)
   closure_node *node = NULL;
   if ((node = closure_node_factory (func, cl)) == NULL)
     {
-      log_errorln ("Failed to create a closure node");
+      i_log_error ("Failed to create a closure node");
       return 1;
     }
 
@@ -147,12 +147,12 @@ create_thread_pool ()
 
   if ((w = malloc (sizeof (thread_pool))) == NULL)
     {
-      log_errorln_errno ("Failed to allocate memory for thread_pool");
+      i_log_error ("Failed to allocate memory for thread_pool");
       goto failed;
     }
   if (pthread_mutex_init (&w->mutex, NULL))
     {
-      log_errorln_errno ("Failed to create mutex for thread_pool");
+      i_log_error ("Failed to create mutex for thread_pool");
       goto failed;
     }
 
@@ -171,7 +171,7 @@ failed:
 static int
 join_all (pthread_t *t, size_t num)
 {
-  assert (t != NULL || num == 0);
+  ASSERT (t != NULL || num == 0);
   int ret = 0;
   if (t)
     {
@@ -180,7 +180,7 @@ join_all (pthread_t *t, size_t num)
           if (pthread_join (t[i], NULL))
             {
               ret = 1;
-              log_errorln_errno ("Failed to join thread: %d\n", i);
+              i_log_error ("Failed to join thread: %d\n", i);
             }
         }
     }
@@ -190,7 +190,7 @@ join_all (pthread_t *t, size_t num)
 static int
 cancel_all (pthread_t *t, size_t num)
 {
-  assert (t != NULL || num == 0);
+  ASSERT (t != NULL || num == 0);
   int ret = 0;
   if (t)
     {
@@ -199,7 +199,7 @@ cancel_all (pthread_t *t, size_t num)
           if (pthread_cancel (t[i]))
             {
               ret = 1;
-              log_errorln_errno ("Failed to cancel thread: %d\n", i);
+              i_log_error ("Failed to cancel thread: %d\n", i);
             }
         }
     }
@@ -249,7 +249,7 @@ free_thread_pool (thread_pool *w)
 static void *
 worker_thread (void *cl)
 {
-  assert (cl);
+  ASSERT (cl);
   thread_pool *w = cl;
   get_task_result res = { 0 };
 
@@ -257,7 +257,7 @@ worker_thread (void *cl)
     {
       if (get_task (w, &res))
         {
-          log_errorln ("Failed to get next task inside "
+          i_log_error ("Failed to get next task inside "
                        "worker thread. Exiting early\n");
           return NULL;
         }
@@ -280,13 +280,13 @@ worker_thread (void *cl)
 static int
 thread_pool_common (struct thread_pool_s *w, size_t num_threads)
 {
-  assert (num_threads >= 1);
-  assert (thread_pool_not_spinning (w));
+  ASSERT (num_threads >= 1);
+  ASSERT (thread_pool_not_spinning (w));
 
   w->num_threads = 0;
   if ((w->threads = calloc (num_threads, sizeof (pthread_t))) == NULL)
     {
-      log_errorln_errno ("allocating memory for threads");
+      i_log_error ("allocating memory for threads");
       goto failed;
     }
 
@@ -294,7 +294,7 @@ thread_pool_common (struct thread_pool_s *w, size_t num_threads)
     {
       if (pthread_create (&w->threads[i], NULL, worker_thread, w))
         {
-          log_errorln_errno ("Failed to create thread: %d", i);
+          i_log_error ("Failed to create thread: %d", i);
           goto failed;
         }
       else
@@ -306,12 +306,12 @@ thread_pool_common (struct thread_pool_s *w, size_t num_threads)
   return 0;
 
 failed:
-  log_errorln ("Failed to create worker threads");
+  i_log_error ("Failed to create worker threads");
   if (w->threads)
     {
       if (cancel_and_join_all (w->threads, w->num_threads))
         {
-          log_errorln ("Failed to cancel and join all threads");
+          i_log_error ("Failed to cancel and join all threads");
           // TODO - what should I do here?
         }
       free (w->threads);
@@ -327,32 +327,32 @@ thread_pool_execute_until_done (thread_pool *w, size_t num_threads)
 {
   if (spin_thread_pool (w, num_threads))
     {
-      log_errorln ("Failed to spin threads");
+      i_log_error ("Failed to spin threads");
       return 1;
     }
-  assert (thread_pool_is_spinning (w));
+  ASSERT (thread_pool_is_spinning (w));
   if (stop_thread_pool (w))
     {
-      log_errorln ("Failed to stop spinning threads");
+      i_log_error ("Failed to stop spinning threads");
       return 1;
     }
-  assert (thread_pool_not_spinning (w));
+  ASSERT (thread_pool_not_spinning (w));
   return 0;
 }
 
 int
 spin_thread_pool (struct thread_pool_s *w, size_t num_threads)
 {
-  assert (w);
+  ASSERT (w);
 
   if (thread_pool_is_spinning (w))
     {
-      log_errorln ("Trying to spin a thread pool that's already running");
+      i_log_error ("Trying to spin a thread pool that's already running");
       return 1;
     }
   if (num_threads < 1)
     {
-      log_errorln ("Threads must be >= 1");
+      i_log_error ("Threads must be >= 1");
       return 1;
     }
 
@@ -360,26 +360,26 @@ spin_thread_pool (struct thread_pool_s *w, size_t num_threads)
 
   if (thread_pool_common (w, num_threads))
     {
-      log_errorln ("Failed to initialize worker threads");
+      i_log_error ("Failed to initialize worker threads");
       goto failed;
     }
 
-  assert (thread_pool_is_spinning (w));
+  ASSERT (thread_pool_is_spinning (w));
   return 0;
 
 failed:
-  assert (thread_pool_not_spinning (w));
+  ASSERT (thread_pool_not_spinning (w));
   return 1;
 }
 
 int
 stop_thread_pool (struct thread_pool_s *w)
 {
-  assert (w);
+  ASSERT (w);
 
   if (thread_pool_not_spinning (w))
     {
-      log_errorln (
+      i_log_error (
           "Trying to stop spinning a thread pool that's not spinning");
       return 1;
     }
@@ -392,11 +392,11 @@ stop_thread_pool (struct thread_pool_s *w)
 
   int ret = 0;
 
-  assert (thread_pool_is_spinning (w));
+  ASSERT (thread_pool_is_spinning (w));
 
   if (join_all (w->threads, w->num_threads))
     {
-      log_errorln ("Failed to join all threads");
+      i_log_error ("Failed to join all threads");
       ret = 1;
       goto theend;
     }

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
+/////////////////////// Logging
+#ifndef NLOGGING
 
 // Regular colors
 #define BLACK "\033[0;30m"
@@ -27,41 +26,33 @@
 // Reset
 #define RESET "\033[0m"
 
-#ifndef NLOGS
-#define log_common(str, prefix, color, fmt, ...)                              \
-  fprintf (str, BOLD_##color prefix RESET color " [%s(%s:%d)]: " RESET fmt,   \
-           __FILE__, __func__, __LINE__, ##__VA_ARGS__)
+// Internal log function
+void i_log_internal (
+    const char *prefix,
+    const char *color,
+    const char *fmt,
+    ...)
+    __attribute__ ((format (printf, 3, 4)));
+
+// Log macros
+#define i_log_trace(...) i_log_internal ("TRACE", BOLD_WHITE, __VA_ARGS__)
+#define i_log_debug(...) i_log_internal ("DEBUG", BLUE, __VA_ARGS__)
+#define i_log_info(...) i_log_internal ("INFO", GREEN, __VA_ARGS__)
+#define i_log_warn(...) i_log_internal ("WARN", YELLOW, __VA_ARGS__)
+#define i_log_error(...) i_log_internal ("ERROR", RED, __VA_ARGS__)
+#define i_log_assert(...) i_log_internal ("ASSERT", RED, __VA_ARGS__)
+#define i_log_failure(...) i_log_internal ("FAILURE", BOLD_RED, __VA_ARGS__)
+#define i_log_passed(...) i_log_internal ("PASSED", BOLD_GREEN, __VA_ARGS__)
+
 #else
-#define log_common(str, prefix, color, fmt, ...)
+
+#define i_log_trace (fmt, __VA_ARGS__)
+#define i_log_debug (fmt, __VA_ARGS__)
+#define i_log_info (fmt, __VA_ARGS__)
+#define i_log_warn (fmt, __VA_ARGS__)
+#define i_log_error (fmt, __VA_ARGS__)
+#define i_log_assert (fmt, __VA_ARGS__)
+#define i_log_failure (fmt, __VA_ARGS__)
+#define i_log_passed (fmt, __VA_ARGS__)
+
 #endif
-
-#define log_infoln(fmt, ...)                                                  \
-  log_common (stdout, "INFO", WHITE, fmt "\n", ##__VA_ARGS__)
-
-#ifndef NDEBUG
-#define log_debugln(fmt, ...)                                                 \
-  log_common (stdout, "DEBUG", BLUE, fmt "\n", ##__VA_ARGS__)
-#else
-#define log_debugln(fmt, ...)
-#endif
-
-#define log_warnln(fmt, ...)                                                  \
-  log_common (stdout, "WARN", YELLOW, fmt "\n", ##__VA_ARGS__)
-
-#define log_errorln_errno(fmt, ...)                                           \
-  do                                                                          \
-    {                                                                         \
-      if (errno > 0)                                                          \
-        {                                                                     \
-          log_common (stderr, "ERROR", RED, fmt " -- errno: %s\n",            \
-                      ##__VA_ARGS__, strerror (errno));                       \
-        }                                                                     \
-      else                                                                    \
-        {                                                                     \
-          log_common (stderr, "ERROR", RED, fmt "\n", ##__VA_ARGS__);         \
-        }                                                                     \
-    }                                                                         \
-  while (0)
-
-#define log_errorln(fmt, ...)                                                 \
-  log_common (stderr, "ERROR", RED, fmt "\n", ##__VA_ARGS__);

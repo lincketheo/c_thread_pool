@@ -5,22 +5,22 @@
 
 #include "matrix.h"
 
-#define assert_matrix(m)                                                      \
-  assert (m);                                                                 \
-  assert (m->data);                                                           \
-  assert (m->rows > 0);                                                       \
-  assert (m->cols > 0);
+#define ASSERT_matrix(m) \
+  ASSERT (m);            \
+  ASSERT (m->data);      \
+  ASSERT (m->rows > 0);  \
+  ASSERT (m->cols > 0);
 
 int
 matmul (const matrix *a, const matrix *b, matrix *dest)
 {
-  assert (a->data);
-  assert (b->data);
-  assert (a->cols == b->rows);
-  assert (dest);
-  assert (dest->data);
-  assert (dest->rows == a->rows);
-  assert (dest->cols == b->cols);
+  ASSERT (a->data);
+  ASSERT (b->data);
+  ASSERT (a->cols == b->rows);
+  ASSERT (dest);
+  ASSERT (dest->data);
+  ASSERT (dest->rows == a->rows);
+  ASSERT (dest->cols == b->cols);
 
   for (int a_row = 0; a_row < a->rows; ++a_row)
     {
@@ -38,15 +38,15 @@ matmul (const matrix *a, const matrix *b, matrix *dest)
   return 0;
 }
 
-#define random_double(min, max)                                               \
+#define random_double(min, max) \
   ((min) + (rand () / (double)RAND_MAX) * ((max) - (min)))
 
 static int
 memalloc_matrix (size_t rows, size_t cols, matrix *dest)
 {
-  assert (dest);
-  assert (rows > 0);
-  assert (cols > 0);
+  ASSERT (dest);
+  ASSERT (rows > 0);
+  ASSERT (cols > 0);
 
   dest->rows = rows;
   dest->cols = cols;
@@ -76,7 +76,7 @@ random_matrix (size_t rows, size_t cols, matrix *dest, double min, double max)
   if (memalloc_matrix (rows, cols, dest))
     return 1;
 
-  assert_matrix (dest);
+  ASSERT_matrix (dest);
   for (int i = 0; i < rows; ++i)
     {
       for (int j = 0; j < cols; ++j)
@@ -93,7 +93,7 @@ zero_matrix (size_t rows, size_t cols, matrix *dest)
   if (memalloc_matrix (rows, cols, dest))
     return 1;
 
-  assert_matrix (dest);
+  ASSERT_matrix (dest);
   for (int i = 0; i < rows; ++i)
     {
       for (int j = 0; j < cols; ++j)
@@ -107,7 +107,7 @@ zero_matrix (size_t rows, size_t cols, matrix *dest)
 void
 print_matrix (matrix *m)
 {
-  assert_matrix (m);
+  ASSERT_matrix (m);
   for (int i = 0; i < m->rows; ++i)
     {
       for (int j = 0; j < m->cols - 1; ++j)

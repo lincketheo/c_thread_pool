@@ -1,9 +1,8 @@
-
-#include <CUnit/CUnit.h>
-
+#include "threadpool.h"
 #include "closure.h"
 #include "logging.h"
-#include "threadpool.h"
+#include "testing.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -86,9 +85,9 @@ create_thread_pool_for_test (size_t num_tasks, int max_arg, task **args_dest,
   task *t = malloc (num_tasks * sizeof *t);
   int *types = malloc (num_tasks * sizeof *types);
 
-  CU_ASSERT_PTR_NOT_NULL_FATAL (w);
-  CU_ASSERT_PTR_NOT_NULL_FATAL (t);
-  CU_ASSERT_PTR_NOT_NULL_FATAL (types);
+  test_fail_if_null (w);
+  test_fail_if_null (t);
+  test_fail_if_null (types);
 
   for (int i = 0; i < num_tasks; ++i)
     {
@@ -101,20 +100,20 @@ create_thread_pool_for_test (size_t num_tasks, int max_arg, task **args_dest,
         case 0:
           t[i].a.a = arg1;
           t[i].a.b = arg2;
-          CU_ASSERT (add_task (w, _add_task, &t[i].a) == 0);
+          test_assert_equal (add_task (w, _add_task, &t[i].a), 0);
           break;
         case 1:
           t[i].m.a = arg1;
           t[i].m.b = arg2;
-          CU_ASSERT (add_task (w, multiply_task, &t[i].m) == 0);
+          test_assert_equal (add_task (w, multiply_task, &t[i].m), 0);
           break;
         case 2:
           t[i].d.a = (float)arg1;
           t[i].d.b = (float)arg2;
-          CU_ASSERT (add_task (w, divide_task, &t[i].d) == 0);
+          test_assert_equal (add_task (w, divide_task, &t[i].d), 0);
           break;
         default:
-          CU_ASSERT (0);
+          test_fail_if (1);
         }
     }
 
@@ -131,16 +130,16 @@ test_verify_tasks_correct (size_t num_tasks, task *args, int *types)
       switch (types[i])
         {
         case 0:
-          CU_ASSERT (args[i].a.a + args[i].a.b == args[i].a.ret);
+          test_assert_equal (args[i].a.a + args[i].a.b, args[i].a.ret);
           break;
         case 1:
-          CU_ASSERT (args[i].m.a * args[i].m.b == args[i].m.ret);
+          test_assert_equal (args[i].m.a * args[i].m.b, args[i].m.ret);
           break;
         case 2:
-          CU_ASSERT (args[i].d.a / args[i].d.b == args[i].d.ret);
+          test_assert_equal (args[i].d.a / args[i].d.b, args[i].d.ret);
           break;
         default:
-          CU_ASSERT (0 && "rand() % 3 was greater than 2?");
+          test_fail_if (1 && "rand() % 3 was greater than 2?");
           return;
         }
     }
@@ -175,10 +174,19 @@ timing_test (size_t num_threads)
   // Assumes:
   //  - Uniform distribution of tasks
   //  - Work should take the same time given the same conditions
-  create_thread_pool_for_test (num_tasks, 1000, &tasks_slow, &types_slow,
-                               &w_slow);
-  create_thread_pool_for_test (num_tasks, 1000, &tasks_fast, &types_fast,
-                               &w_fast);
+  create_thread_pool_for_test (
+      num_tasks,
+      1000,
+      &tasks_slow,
+      &types_slow,
+      &w_slow);
+
+  create_thread_pool_for_test (
+      num_tasks,
+      1000,
+      &tasks_fast,
+      &types_fast,
+      &w_fast);
 
   context c_slow = (context){
     .w = w_slow,
@@ -197,7 +205,7 @@ timing_test (size_t num_threads)
 
   printf ("\nT(1 thread) = %f seconds\n", slow_results);
   printf ("T(%zu threads) = %f seconds\n", num_threads, fast_results);
-  CU_ASSERT (fast_results <= slow_results);
+  test_assert_equal (fast_results <= slow_results, true);
 
   free_timeit_closure (t_slow);
   free_timeit_closure (t_fast);
@@ -206,8 +214,8 @@ timing_test (size_t num_threads)
   free (tasks_fast);
   free (types_fast);
 
-  CU_ASSERT (free_thread_pool (w_slow) == 0);
-  CU_ASSERT (free_thread_pool (w_fast) == 0);
+  test_assert_equal (free_thread_pool (w_slow), 0);
+  test_assert_equal (free_thread_pool (w_fast), 0);
 }
 
 void
@@ -227,16 +235,15 @@ validation_test (size_t num_threads)
   free_thread_pool (w);
 }
 
-int
-main ()
+TEST (threadpool)
 {
   ssize_t num_threads = get_available_threads ();
 
   if (num_threads == -1)
     {
-      log_infoln ("Doing nothing for thread test."
+      i_log_info ("Doing nothing for thread test."
                   "Couldn't figure out how many threads exist on machine");
-      return 0;
+      test_fail_if (1);
     }
 
   if (num_threads > 4)
@@ -245,11 +252,9 @@ main ()
     }
   else
     {
-      log_infoln ("Doing nothing for timing test for "
+      i_log_info ("Doing nothing for timing test for "
                   "thread pool. Not enough threads");
     }
 
   validation_test (num_threads);
-
-  return 0;
 }

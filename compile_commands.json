@@ -1,87 +1,94 @@
 [
  {
-  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "directory": "/Users/lincketheo/c_thread_pool",
   "arguments": [
    "gcc",
    "-o",
-   "libs/libmat.so",
+   "libthreadpool.so",
    "-shared",
-   "-fPIC",
-   "libs/matrix.c",
-   "-L./libs",
-   "-I./libs",
-   "-Wall",
-   "-Werror",
-   "-g"
-  ],
-  "file": "libs/matrix.c"
- },
- {
-  "directory": "/Users/theolincke/Development/c_thread_pool",
-  "arguments": [
-   "gcc",
-   "-o",
-   "matrix_example",
-   "apps/matrix_example.c",
-   "-lmat",
-   "-L./libs",
-   "-I./libs",
-   "-Wall",
-   "-Werror",
-   "-g"
-  ],
-  "file": "apps/matrix_example.c"
- },
- {
-  "directory": "/Users/theolincke/Development/c_thread_pool",
-  "arguments": [
-   "gcc",
-   "-o",
-   "libs/libclosure.so",
-   "-shared",
-   "-fPIC",
+   "libs/async_await.c",
    "libs/closure.c",
-   "-L./libs",
-   "-I./libs",
+   "libs/matrix.c",
+   "libs/testing.c",
+   "libs/threadpool.c",
    "-Wall",
    "-Werror",
-   "-g"
-  ],
-  "file": "libs/closure.c"
- },
- {
-  "directory": "/Users/theolincke/Development/c_thread_pool",
-  "arguments": [
-   "gcc",
-   "-o",
-   "libs/libthreadpool.so",
-   "-shared",
+   "-g",
    "-fPIC",
-   "-lclosure",
-   "libs/thread_pool.c",
-   "-L./libs",
    "-I./libs",
-   "-Wall",
-   "-Werror",
-   "-g"
+   "-L."
   ],
-  "file": "libs/thread_pool.c"
+  "file": "libs/threadpool.c"
  },
  {
-  "directory": "/Users/theolincke/Development/c_thread_pool",
+  "directory": "/Users/lincketheo/c_thread_pool",
   "arguments": [
    "gcc",
    "-o",
-   "test_thread_pool",
-   "apps/test_thread_pool.c",
-   "-lthreadpool",
-   "-lclosure",
-   "-L./libs",
-   "-I./libs",
+   "matrix",
+   "apps/matrix.c",
    "-Wall",
    "-Werror",
-   "-g"
+   "-g",
+   "-fPIC",
+   "-I./libs",
+   "-L.",
+   "-lthreadpool"
   ],
-  "file": "apps/test_thread_pool.c"
+  "file": "apps/matrix.c"
+ },
+ {
+  "directory": "/Users/lincketheo/c_thread_pool",
+  "arguments": [
+   "gcc",
+   "-o",
+   "async_await",
+   "tests/async_await.c",
+   "-Wall",
+   "-Werror",
+   "-g",
+   "-fPIC",
+   "-I./libs",
+   "-L.",
+   "-lcunit",
+   "-lthreadpool"
+  ],
+  "file": "tests/async_await.c"
+ },
+ {
+  "directory": "/Users/lincketheo/c_thread_pool",
+  "arguments": [
+   "gcc",
+   "-o",
+   "closure",
+   "tests/closure.c",
+   "-Wall",
+   "-Werror",
+   "-g",
+   "-fPIC",
+   "-I./libs",
+   "-L.",
+   "-lcunit",
+   "-lthreadpool"
+  ],
+  "file": "tests/closure.c"
+ },
+ {
+  "directory": "/Users/lincketheo/c_thread_pool",
+  "arguments": [
+   "gcc",
+   "-o",
+   "threadpool",
+   "tests/threadpool.c",
+   "-Wall",
+   "-Werror",
+   "-g",
+   "-fPIC",
+   "-I./libs",
+   "-L.",
+   "-lcunit",
+   "-lthreadpool"
+  ],
+  "file": "tests/threadpool.c"
  }
 ]

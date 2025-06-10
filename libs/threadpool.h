@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdlib.h> // ssize_t
+#include <sys/types.h>
 
 typedef struct thread_pool_s thread_pool;
 
@@ -8,7 +8,7 @@ int thread_pool_is_spinning (thread_pool *w);
 
 int thread_pool_not_spinning (thread_pool *w);
 
-#define thread_pool_in_valid_state(w)                                         \
+#define thread_pool_in_valid_state(w) \
   (thread_pool_is_spinning (w) || thread_pool_not_spinning (w))
 
 // Caller must call free_thread_pool

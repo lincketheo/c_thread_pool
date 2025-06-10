@@ -9,8 +9,12 @@ typedef struct
   double **data;
 } matrix;
 
-int random_matrix (size_t rows, size_t cols, matrix *dest, double min,
-                   double max);
+int random_matrix (
+    size_t rows,
+    size_t cols,
+    matrix *dest,
+    double min,
+    double max);
 
 int zero_matrix (size_t rows, size_t cols, matrix *dest);
 
