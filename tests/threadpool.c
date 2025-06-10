@@ -78,8 +78,12 @@ typedef union
 //
 // max_arg is just the maximum argument passed to each task
 void
-create_thread_pool_for_test (size_t num_tasks, int max_arg, task **args_dest,
-                             int **types_dest, thread_pool **thread_pool_dest)
+create_thread_pool_for_test (
+    size_t num_tasks,
+    int max_arg,
+    task **args_dest,
+    int **types_dest,
+    thread_pool **thread_pool_dest)
 {
   thread_pool *w = create_thread_pool ();
   task *t = malloc (num_tasks * sizeof *t);
